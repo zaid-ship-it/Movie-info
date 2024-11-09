@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie and Game Info Plugin</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #141414;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+        }
+
+        input {
+            width: 80%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #e50914;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #f40612;
+        }
+
+        .loading {
+            display: none;
+            font-size: 1.5rem;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            display: flex;
+            align-items: flex-start;
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .movie-list-container {
+            position: relative;
+            overflow: hidden; /* Hide overflow for scrolling effect */
+            margin: 20px 0; /* Margin between categories */
+        }
+
+        .movie-list {
+            display: flex;
+            transition: transform 0.3s ease; /* Smooth transition for sliding */
+            margin: 0; /* Reset default margins */
+            padding: 0; /* Reset default paddings */
+            align-items: flex-start; /* Align items to start */
+            cursor: grab;
+            overflow-x: hidden; /* Hide horizontal scrollbars */
+        }
+
+        .movie-item {
+            margin-right: 15px; /* Space between movies */
+            cursor: pointer; /* Pointer cursor for clickable items */
+        }
+
+        .movie-item img {
+            width: 180px; /* Set width for Netflix-style large images */
+            height: 280px; /* Fixed height for consistency */
+            object-fit: cover; /* Maintain aspect ratio */
+            border-radius: 5px;
+        }
+
+        .movie-item h3 {
+            margin: 10px 0 5px;
+            font-size: 1.2rem; /* Larger title font */
+            color: white;
+            text-align: center;
+            max-width: 180px; /* Limit width to match image */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Ensure long titles are truncated */
+            white-space: nowrap;
+        }
+
+        .movie-item p {
+            margin: 0 10px 10px;
+            font-size: 0.8rem;
+            color: #ccc;
+            text-align: center;
+        }
+
+        h2 {
+            margin: 30px 0 10px;
+            font-size: 2rem;
+            text-align: left; /* Aligning section titles to the left */
+        }
+
+        /* Add hover effect to scale the movie item */
+        .movie-item img:hover {
+            transform: scale(1.1);
+            transition: transform 0.3s ease;
+        }
+
+        .slider-btn {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+
+        .prev {
+            left: 10px; /* Space from the left edge */
+        }
+
+        .next {
+            right: 10px; /* Space from the right edge */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Movie and Game Info</h1>
+        <input type="text" id="search-input" placeholder="Enter a movie or game title...">
+        <button id="search-button">Search</button>
+        <div id="loading" class="loading">Loading...</div>
+        <div id="info-box" class="info-box hidden">
+            <img id="poster" src="" alt="Poster" class="poster" style="width: 150px;">
+            <div class="details">
+                <h2 id="title"></h2>
+                <p id="description"></p>
+                <p><strong>Cast:</strong> <span id="cast"></span></p>
+            </div>
+        </div>
+
+        <h2>Trending Movies</h2>
+        <div class="movie-list-container">
+            <button class="slider-btn prev" onclick="scrollMovies('trending-movies', -200)">◀</button>
+            <div class="movie-list" id="trending-movies"></div>
+            <button class="slider-btn next" onclick="scrollMovies('trending-movies', 200)">▶</button>
+        </div>
+
+        <h2>Action Movies</h2>
+        <div class="movie-list-container">
+            <button class="slider-btn prev" onclick="scrollMovies('action-movies', -200)">◀</button>
+            <div class="movie-list" id="action-movies"></div>
+            <button class="slider-btn next" onclick="scrollMovies('action-movies', 200)">▶</button>
+        </div>
+
+        <h2>Adventure Movies</h2>
+        <div class="movie-list-container">
+            <button class="slider-btn prev" onclick="scrollMovies('adventure-movies', -200)">◀</button>
+            <div class="movie-list" id="adventure-movies"></div>
+            <button class="slider-btn next" onclick="scrollMovies('adventure-movies', 200)">▶</button>
+        </div>
+
+        <h2>Comedy Movies</h2>
+        <div class="movie-list-container">
+            <button class="slider-btn prev" onclick="scrollMovies('comedy-movies', -200)">◀</button>
+            <div class="movie-list" id="comedy-movies"></div>
+            <button class="slider-btn next" onclick="scrollMovies('comedy-movies', 200)">▶</button>
+        </div>
+    </div>
+<script src="api.js"></script>
+
+    <script>
+       
+        const searchButton = document.getElementById('search-button');
+        const searchInput = document.getElementById('search-input');
+        const loading = document.getElementById('loading');
+        const infoBox = document.getElementById('info-box');
+        const titleElement = document.getElementById('title');
+        const descriptionElement = document.getElementById('description');
+        const posterElement = document.getElementById('poster');
+        const castElement = document.getElementById('cast');
+
+        searchButton.addEventListener('click', async () => {
+            const query = searchInput.value;
+            if (!query) return;
+
+            loading.style.display = 'block';
+            infoBox.classList.add('hidden');
+
+            try {
+                const response = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.results.length > 0) {
+                    const result = data.results[0];
+                    titleElement.textContent = result.title || result.name;
+                    descriptionElement.textContent = result.overview;
+                    posterElement.src = `https://image.tmdb.org/t/p/w500${result.poster_path}`;
+                    castElement.textContent = result.cast || 'N/A'; // This can be expanded for detailed cast info
+
+                    loading.style.display = 'none';
+                    infoBox.classList.remove('hidden');
+
+                    // Redirect to details page with ID and type
+                    posterElement.onclick = () => {
+                        window.location.href = `details.html?id=${result.id}&type=${result.media_type}`;
+                    };
+                } else {
+                    loading.style.display = 'none';
+                    alert('No results found.');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                loading.style.display = 'none';
+                alert('Failed to fetch data. Please try again later.');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadTrendingMovies();
+            await loadMoviesByGenre(28, 'action-movies'); // Action
+            await loadMoviesByGenre(12, 'adventure-movies'); // Adventure
+            await loadMoviesByGenre(35, 'comedy-movies'); // Comedy
+        });
+
+        async function loadTrendingMovies() {
+            try {
+                const response = await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}`);
+                const data = await response.json();
+                const trendingMoviesContainer = document.getElementById('trending-movies');
+                data.results.slice(0, 20).forEach(movie => {
+                    const movieItem = createMovieItem(movie);
+                    trendingMoviesContainer.appendChild(movieItem);
+                });
+            } catch (error) {
+                console.error('Error fetching trending movies:', error);
+            }
+        }
+
+        async function loadMoviesByGenre(genreId, containerId) {
+            try {
+                const response = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genreId}`);
+                const data = await response.json();
+                const genreMoviesContainer = document.getElementById(containerId);
+                data.results.slice(0, 20).forEach(movie => {
+                    const movieItem = createMovieItem(movie);
+                    genreMoviesContainer.appendChild(movieItem);
+                });
+            } catch (error) {
+                console.error(`Error fetching ${containerId} movies:`, error);
+            }
+        }
+
+        function createMovieItem(movie) {
+            const movieItem = document.createElement('div');
+            movieItem.classList.add('movie-item');
+            movieItem.innerHTML = `
+                <a href="details.html?id=${movie.id}&type=movie">
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title || movie.name}">
+                </a>
+                <h3>${movie.title || movie.name}</h3>
+                <p>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</p>
+            `;
+            return movieItem;
+        }
+
+        function scrollMovies(containerId, scrollAmount) {
+            const movieList = document.getElementById(containerId);
+            movieList.scrollBy({
+                left: scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    </script>
+</body>
+</html>
